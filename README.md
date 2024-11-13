@@ -10,7 +10,7 @@ I am studying [computational engineering](https://www.ae.utexas.edu/undergraduat
 I possess a strong knowledge of applied mathematics, numerical computing, and engineering physics. I love turning mathematical equations into efficient codes using Python or C++.<br>
 
 ## Important Links/Contacts
-[LinkdIn!](https://www.linkedin.com/in/jiwoongchoi7)<br>
+[LinkedIn!](https://www.linkedin.com/in/jiwoongchoi7)<br>
 [Email!](mailto:jiwoongchoi0207@icloud.com)<br>
 
 

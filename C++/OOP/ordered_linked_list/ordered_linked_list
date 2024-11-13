@@ -1,6 +1,31 @@
 /*
 Name: Alex Choi
 Last Edited: October 20, 2024
+
+### Problem Description
+
+This C++ code implements a sorted linked list that stores unique values in increasing order. The list is constructed using `Node` and `List` classes with smart pointers (specifically `shared_ptr`) to manage memory efficiently.
+
+Key features of this linked list implementation:
+1. Node Class: Represents individual elements in the list. Each node contains:
+   - A `datavalue` to store the integer value.
+   - A `datacount` to track occurrences of the value.
+   - A `next` pointer to the next node, allowing traversal through the list.
+
+2. List Class: Manages the linked list and provides methods to:
+   - Insert elements in sorted order (head, middle, or tail).
+   - Check if a value exists in the list.
+   - Print the list elements in order.
+   - Calculate the length of the list.
+
+The code includes multiple insertion cases:
+- Head Insertion: If a value is smaller than the current head node, a new head is created.
+- Middle Insertion: Inserts values in sorted order between existing nodes.
+- Tail Insertion: Appends the value at the end if it is the largest.
+
+### Example Usage in main()
+
+The main function initializes an empty list and allows interactive user input. It accepts integers, inserting each into the list in sorted order and printing the list after each insertion. The program terminates when the user inputs zero.
 */
 
 #include <vector>

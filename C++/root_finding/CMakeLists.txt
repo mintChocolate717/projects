@@ -1,5 +1,5 @@
 #Name: Alex Choi
-#last edited: Nov 2024
+#last edited: Oct 30 2024
 #cmake config for newton_root_templatized.cpp
 
 cmake_minimum_required( VERSION 3.20 )

@@ -1,6 +1,28 @@
 /*
-name: Alex Choi
-last edited: October 30, 2024
+Name: Alex Choi
+Last Edited: October 30, 2024
+
+### Problem Description
+
+This C++ code implements a templatized version of Newton's root-finding method to approximate square roots of real and complex numbers. It uses function templates to generalize the code for various data types (`double`, `float`, `complex<double>`), allowing flexible usage of the Newton-Raphson method.
+
+### Key Components
+
+1. Function Template for f(x): Represents the function \( f(x) = x^2 - num \) whose root we want to find, where `num` is the target value for which we seek the square root.
+
+2. Function Template for f'(x): Uses a finite difference method to approximate the derivative of \( f(x) \), \( f'(x) \), through forward Euler with a small `dx` step size.
+
+3. Templatized Newton’s Method: The `newton_root` function applies the Newton-Raphson iteration to approximate the root of \( f(x) \) for any data type `T`. The method iterates until the function value is within a specified tolerance or a maximum iteration limit is reached.
+
+### Example Usage in main()
+
+The main function demonstrates the usage of the `newton_root` function with:
+- `double` values (e.g., square roots of 2 and 5)
+- `float` values (e.g., square roots of 7 and 3)
+- `complex<double>` values (e.g., square roots of 11 and 1)
+
+Each example calculates the square root of the specified values and prints the results.
+
 */
 
 #include <iostream>

@@ -1,4 +1,4 @@
-# projects
+# Projects
 Welcome! Recruiters, Hiring Managers, and Viewers. This is Jiwoong "Alex" Choi's professional portfolio.
 Feel free to look around and read through my codes, configuration files, and packages.<br>
 

@@ -5,7 +5,7 @@ This repository serves as the personal portfolio for Jiwoong "Alex" Choi
 Welcome! Recruiters, Hiring Managers, and Viewers. This is Jiwoong "Alex" Choi's professional portfolio.
 Feel free to look around and read through my codes, configuration files, and packages.<br>
 
-Please feel free to reach out for any questions!<br>
+Please feel free to reach out for any questions. <br>
 
 ## About Me
 I am currently a 3rd-year college student attending the University of Texas at Austin - Cockrell School of Engineering. <br>

@@ -1,2 +1,4 @@
 # projects
-Personal Projects of Jiwoong "Alex" Choi
+This repository serves as the personal portfolio for Jiwoong "Alex" Choi
+
+

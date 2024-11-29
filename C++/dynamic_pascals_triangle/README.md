@@ -2,9 +2,9 @@
 
 This C++ project implements an efficient generator for Pascal's Triangle using dynamic memory allocation and a 1D array. Pascal's Triangle is commonly used in combinatorics to compute binomial coefficients, with each value calculated as:
 
-\[
+$$\[
 C(i, j) = C(i-1, j-1) + C(i-1, j)
-\]
+\]$$
 
 This implementation supports dynamically resizing the triangle to accommodate new rows as needed.
 

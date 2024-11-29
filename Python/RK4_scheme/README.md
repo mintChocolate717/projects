@@ -6,7 +6,7 @@ This Python project implements a numerical solution for a system of two ordinary
 
 ## Features
 - **Accurate Numerical Solution**:
-  - Solves a system of ODEs for position $$\( x(t) \)$$ and velocity $$\( v(t) \)$$:
+  - Solves a system of ODEs for position $$\ x(t) \$$ and velocity $$\ v(t) \$$:
     1. $$\frac{\partial x}{\partial t} = v(t)$$
     2. $$\frac{\partial v}{\partial t} = g - \frac{c_d}{m} v^2$$
 - **Customizable Parameters**:

@@ -1,6 +1,6 @@
 /**
  * @author Jiwoong "Alex" Choi
- * @date 2024.11.27
+ * @date 2024.12.06
  * @details For COE322 final project
  * EID: JC96768
  * TACC: love_bbq_69
@@ -17,8 +17,10 @@ using std::vector;
 
 /// for random number generation
 #include <random>
+
 // For seeding with time & sleep
 #include <chrono>
+
 //  for sleep to simulate grid update
 #include <thread> 
 
@@ -32,7 +34,7 @@ using std::optional;
  * @brief random integer generator within defined range
  * @param min the lowest value that random number can be
  * @param max the highest value that random number can be
- * @return int a random integer between min and max
+ * @return int a random integer between min and max, inclusive [min, max]
  * @details this function seeds with random_device and then uses static RNG to ensure randomness
  */
 int random_int(int min, int max) {
@@ -48,11 +50,31 @@ int random_int(int min, int max) {
 };
 
 /**
+ * @brief random double generator within defined range
+ * @param min the lowest value that random number can be
+ * @param max the highest value that random number can be
+ * @return double a random double between min and max, inclusive [min, max]
+ * @details this function seeds with random_device and then uses static RNG to ensure randomness
+ */
+double random_double(double min, double max) {
+    // seed the generator using random device:
+    std::random_device random_device;
+    /// @brief create the STATIC engine that's shared by all function invocations
+    /// @details the engine has to be static for all function calls, otherwise the generator gets recreated every time, leading to a sequence of identical seed numbers
+    static std::default_random_engine static_engine( random_device() );
+    // apply distribution to the generator
+    std::uniform_real_distribution<double> distribution(min, max);
+    // finally return the random double
+    return distribution(static_engine);
+};
+
+
+/**
  * @class Ocean
  * @brief 2d cellular representation of ocean with objects
  */
 class Ocean {
-    public:
+    public: // @todo later change to private/protected
         /// @var int turtles
         /// @brief Population of turtles in the simulation.
         int turtles{0};
@@ -75,8 +97,6 @@ class Ocean {
         /// @var int num_cells
         /// @brief Total number of cells in the 2D grid, calculated as num_rows * num_cols.
         int num_cells{0};
-    
-    public:
         /// @enum Occupy
         /// @brief textual description of what's in the cell instead of "magic numbers"
         enum class Occupy {
@@ -136,109 +156,144 @@ class Ocean {
                 case Occupy::trash: return 'x';
                 /// ship cell
                 case Occupy::ship: return '|';
+                default:
+                    return '?'; // place holder for possible unknown state
             };
         }
 
         /**
          * @brief class that defines possible directions of an object in a cell
+         * @details numbers for eaiser code writing
          */
         enum class Direction {
-            Origin,    // No movement
-            East,      // E
-            North,     // N
-            West,      // W
-            South,     // S
-            NorthEast, // NE
-            NorthWest, // NW
-            SouthEast, // SE
-            SouthWest  // SW
+            Idle = 0,    // No movement
+            East = 1,      // E
+            North = 2,     // N
+            West = 3,      // W
+            South = 4,     // S
+            NorthEast = 5, // NE
+            NorthWest = 6, // NW
+            SouthEast = 7, // SE
+            SouthWest = 8  // SW
         };
 
         /**
          * @brief updates coordinate to move the object to the desired position
-         * @param x x coordinate
-         * @param y y coordinate
+         * @param i row index
+         * @param j column index
          * @param direction the direction which the object will move to 
          * @param object the Occupy obejct in the cell
          */
-        void move(int x, int y, Occupy object, Direction direction) {
+        void move(int i, int j, Occupy object, Direction direction) {
             // Exit early if the direction is Origin (no movement)
-            if (direction == Direction::Origin) { return; }
-            
+            if (direction == Direction::Idle) { return; }
             // Initialize new x and y coordinates
-            int new_x = x, new_y = y;
-
+            int new_i = i, new_j = j;
             // Determine the new coordinates based on the direction
-            // NOTE: the (i, j) coordinates are (y, x) in our case, so be careful
+            // BE CAREFUL: the (i, j) coordinates are (-y, x) in our case, so be careful
+            // @details for example, "moving East" in our printed grid is increasing j index
             switch (direction) {
                 case Direction::East: // East
-                    new_x++;
+                    new_j++;
                     break;
                 case Direction::North: // North
-                    new_y++;
+                    new_i--;
                     break;
                 case Direction::West: // West
-                    new_x--;
+                    new_j--;
                     break;
                 case Direction::South: // South
-                    new_y--;
+                    new_i++;
                     break;
                 case Direction::NorthEast: // North-East
-                    new_y++;
-                    new_x++;
+                    new_i--; 
+                    new_j++;
                     break;
                 case Direction::NorthWest: // North-West
-                    new_x--;
-                    new_y++;
+                    new_i--;
+                    new_j--;
                     break;
                 case Direction::SouthEast: // South-East
-                    new_x++;
-                    new_y--;
+                    new_i++;
+                    new_j++;
                     break;
                 case Direction::SouthWest: // South-West
-                    new_x--;
-                    new_y--;
+                    new_i++;
+                    new_j--;
                     break;
                 default: break; // handles Origin case
             }
-            // make the current cell empty
-            set_cell(x, y, Occupy::empty);
-            // Check for out-of-bounds movement: if new coordinate places the object outside of the grid, then let them disappear
-            if (new_x < num_cols && new_x >= 0 && new_y < num_rows && new_y >= 0) {
-                 // if within the bounds, update the cell of new coordinate
-                 set_cell(new_x, new_y, object);
+            // Check for out-of-bounds movement: if the new position is invalid, return early
+            if (new_i < 0 or new_i >= num_rows or new_j < 0 or new_j >= num_cols) {
+                return; // Object stays in the same position
+            }
+            // If within bounds, update the new cell and empty the current cell
+            set_cell(new_i, new_j, object);
+            set_cell(i, j, Occupy::empty);
+        }
+
+        /**
+         * @brief generates random direction based on the user-defined probability for object staying idle
+         * @param idle_chance the probability that object stays idle
+         * @return random integer that corresponds to one of the moves in class Direction based on user-set parameters of probability
+         */
+        Ocean::Direction random_direction(double idle_chance = static_cast<double>(1. / 9.)) {
+            // in total we have 9 moves total, with 1 move being idle and rest of 8 moves being active
+            // based on the given idle_chance, we return corresponding move with pre-defined probabilities
+            int random_num = random_double(0.0, 100.); // 100% percentage pdf
+            
+            // simulate idle_chance probability:
+            if (random_num <= idle_chance) {
+                // if probability satisfies, return Idle:
+                return Ocean::Direction::Idle;
+            } else {
+                // rest of the probability, return one of the active moves:
+                return static_cast<Ocean::Direction>(random_int(1, 8));
             }
         }
 
         /**
          * @brief generates movement for a turtle on the ocean grid
-         * @details either stays idle, move left, move right, move up, or move down, all equal chances
-         * @param x x position of the turtle
-         * @param y y position of the turtle
+         * @details all moves have equal chance of being executed from enum class Direction
+         * @param i row index
+         * @param j column index
          */
-        void turtle_move (int x, int y) {
+        void turtle_move (int i, int j) {
             // this randomly generated integer decides the move for the turtle
-            int move = random_int(0, 4);
-            // now determine the move:
-            switch (move) {
-            // case - doesn't move
-            case 0: break;
-            // case - move right
-            case 1:
-                // current cell becomes emtpy:
-                set_cell(x, y, Occupy::empty);
-                // right cell becomes turtle:
-                set_cell(x + 1, y, Occupy::turtle);
-                break;
-            // case - move left
-            case 2:
-                // current cell becomes empty:
-                set_cell(x, y, Occupy::empty);
-
+            // apply the random movement:
+            move(i, j, Occupy::turtle, static_cast<Ocean::Direction>(random_int(0, 8)));
+        };
+        
+        /**
+         * @brief generates movement for a trash on the ocean grid
+         * @details 50% chance of staying idle and 50% of moving in any random direction
+         * @param i row index
+         * @param j column index
+         */
+        void trash_move (int i, int j) {
+            // use random int to simulate 50% chacne for staying idle:
+            if (random_int(0, 1) == 0) {
+                // then make idle move for this trash
+                move(i, j, Occupy::trash, Ocean::Direction::Idle);
+            } else { // otherwise apply equal probability for rest of moves:
+                move(i, j, Occupy::trash, static_cast<Ocean::Direction>(random_int(1, 8)));
             }
-        }
-        void trash_move () {}
-        void ship_move () {}
+        };
+        /**
+         * @brief generates movement for a ship on the ocean grid
+         * @details 20% chance of staying idle and 80% of moving in any random direction
+         * @param i row index
+         * @param j column index
+         */        
+        void ship_move (int i, int j) {
+            // use random int to simulate 20% chacne for staying idle:
+            if (random_int(1, 5) == 1) {
+                // then make idle move for this trash
+                move(i, j, Occupy::ship, Ocean::Direction::Idle);
+            } else { // otherwise apply equal probability for rest of moves:
+                move(i, j, Occupy::ship, static_cast<Ocean::Direction>(random_int(1, 8)));
+            }
+        };
 
         /**
         * @brief prints the entire ocean grid with ascii characters
@@ -248,7 +303,7 @@ class Ocean {
         */
         void print_grid() {
             // first, send the cursor to the home position:
-            printf( "%c[1;0H",(char)27);
+            //printf( "%c[1;0H",(char)27); /// TODO: change later
             std::cout << '\n';
             
             // second, print the column indices first:
@@ -415,67 +470,31 @@ class Ship : public Object {
 int main() {
     Ocean ocean(10, 10, 0, 0, 0);
     std::vector<int> example = {
-    // Row 0
-    static_cast<int>(Ocean::Occupy::turtle), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::ship), static_cast<int>(Ocean::Occupy::empty),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash), static_cast<int>(Ocean::Occupy::turtle),
-    static_cast<int>(Ocean::Occupy::empty),
-    // Row 1
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::ship),
-    static_cast<int>(Ocean::Occupy::trash), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::turtle),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash), static_cast<int>(Ocean::Occupy::ship),
-    static_cast<int>(Ocean::Occupy::empty),
-    // Row 2
-    static_cast<int>(Ocean::Occupy::turtle), static_cast<int>(Ocean::Occupy::ship), static_cast<int>(Ocean::Occupy::empty),
-    static_cast<int>(Ocean::Occupy::trash), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::empty),
-    static_cast<int>(Ocean::Occupy::turtle), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash),
-    static_cast<int>(Ocean::Occupy::ship),
-    // Row 3
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::empty),
-    static_cast<int>(Ocean::Occupy::ship), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash),
-    static_cast<int>(Ocean::Occupy::turtle), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash),
-    static_cast<int>(Ocean::Occupy::empty),
-    // Row 4
-    static_cast<int>(Ocean::Occupy::trash), static_cast<int>(Ocean::Occupy::turtle), static_cast<int>(Ocean::Occupy::empty),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash), static_cast<int>(Ocean::Occupy::empty),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::ship), static_cast<int>(Ocean::Occupy::turtle),
-    static_cast<int>(Ocean::Occupy::empty),
-    // Row 5
-    static_cast<int>(Ocean::Occupy::turtle), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::empty),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::turtle), static_cast<int>(Ocean::Occupy::ship),
-    static_cast<int>(Ocean::Occupy::empty),
-    // Row 6
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash), static_cast<int>(Ocean::Occupy::turtle),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::ship), static_cast<int>(Ocean::Occupy::turtle),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash),
-    static_cast<int>(Ocean::Occupy::empty),
-    // Row 7
-    static_cast<int>(Ocean::Occupy::trash), static_cast<int>(Ocean::Occupy::turtle), static_cast<int>(Ocean::Occupy::empty),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::ship), static_cast<int>(Ocean::Occupy::trash),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::turtle),
-    static_cast<int>(Ocean::Occupy::empty),
-    // Row 8
-    static_cast<int>(Ocean::Occupy::ship), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::turtle),
-    static_cast<int>(Ocean::Occupy::trash), static_cast<int>(Ocean::Occupy::trash), static_cast<int>(Ocean::Occupy::empty),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::ship), static_cast<int>(Ocean::Occupy::trash),
-    static_cast<int>(Ocean::Occupy::empty),
-    // Row 9
-    static_cast<int>(Ocean::Occupy::turtle), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::empty),
-    static_cast<int>(Ocean::Occupy::ship), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash),
-    static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::empty), static_cast<int>(Ocean::Occupy::trash),
-    static_cast<int>(Ocean::Occupy::turtle)
-};
+        // Row 0
+        0, -1, 1, -1, 2, -1, -1, 1, 0, -1,
+        // Row 1
+        -1, -1, 2, 1, -1, 0, -1, 1, 2, -1,
+        // Row 2
+        0, 2, -1, 1, -1, -1, 0, -1, 1, 2,
+        // Row 3
+        -1, -1, -1, 2, -1, 1, 0, -1, 1, -1,
+        // Row 4
+        1, 0, -1, -1, 1, -1, -1, 2, 0, -1,
+        // Row 5
+        0, -1, -1, -1, -1, 1, -1, 0, 2, -1,
+        // Row 6
+        -1, 1, 0, -1, 2, 0, -1, -1, 1, -1,
+        // Row 7
+        1, 0, -1, -1, 2, 1, -1, -1, 0, -1,
+        // Row 8
+        2, -1, 0, 1, 1, -1, -1, 2, 1, -1,
+        // Row 9
+        0, -1, -1, 2, -1, 1, -1, -1, 1, 0
+    };
+
     ocean.grid = example; // Directly assign the grid
+
     ocean.print_grid();
-
-    std::cout << "(2, 8): "<<ocean.get_cell(2, 8) << '\n';
-    std::cout << "(1, 9): "<<ocean.get_cell(1, 9) << '\n';
-
-    ocean.move(2, 8, Ocean::Occupy::ship, Ocean::Direction::NorthEast);
-    
-    std::cout <<"(2, 8): should be empty ->  " << ocean.get_cell(2, 8) << '\n';   
-    std::cout << "(1, 9): should be ship -> "<<ocean.get_cell(1, 9) << '\n'; 
 
     #if 0
     // Simulate grid updates in a loop

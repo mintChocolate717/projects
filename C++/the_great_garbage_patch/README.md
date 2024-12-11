@@ -35,14 +35,9 @@ This directory contains the implementation of a **time-dependent simulation** to
    git clone https://github.com/yourusername/ocean-simulation.git
    cd ocean-simulation/simulation
    ```
-2. **Compile the Program**:
-   Use `icpx` or any compatible compiler to build the project.
+2. **Run the Simulation**:
    ```bash
-   icpx -std=c++17 -o ocean_simulation ocean.cpp
-   ```
-3. **Run the Simulation**:
-   ```bash
-   ./ocean_simulation
+   ./ocean.sh
    ```
 
 ---

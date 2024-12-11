@@ -1,10 +1,10 @@
-# (Work In Progress) The Great Garbage Patch: Ocean Ecosystem Simulation
+# The Great Garbage Patch: Ocean Ecosystem Simulation
 
 This directory contains the implementation of a **time-dependent simulation** to model the impact of ocean trash on marine ecosystems. The simulation showcases interactions between turtles, trash, and ships, providing insights into the dynamics of pollution and cleanup strategies.
 
 ---
 
-## Features - Work In Progress
+## Features
 - **Cellular Automaton Framework**: Simulates the movement and interaction of entities (turtles, trash, ships) within a 2D ocean grid.
 - **Entity-Specific Behavior**:
   - **Turtles**: Move randomly and die upon encountering trash.
@@ -15,16 +15,14 @@ This directory contains the implementation of a **time-dependent simulation** to
 
 ---
 
-## Directory Structure - Work In Progress
+## Directory Structure
 ```
 /simulation
 |-- ocean.cpp            # Core implementation of the ocean simulation
-|-- ocean.h              # Header file defining the Ocean class and utilities
 |-- README.md            # Documentation for the simulation project
-|-- examples/
-    |-- example_input.txt # Example configuration for initial entity placement
-|-- output/
-    |-- simulation_log.txt # Log of simulation steps
+|-- ocean.sh             # Bash Script for running the program
+|-- CMakeLists.txt       # CMake configuration
+|-- written_report.pdf   # written report that discuss the project
 ```
 
 ---
@@ -35,18 +33,13 @@ This directory contains the implementation of a **time-dependent simulation** to
    git clone https://github.com/yourusername/ocean-simulation.git
    cd ocean-simulation/simulation
    ```
-2. **Compile the Program**:
+2. **Run the bash script**:
    ```bash
-   g++ -o ocean_sim ocean.cpp
+   icpx ./ocean.sh
    ```
-3. **Run the Simulation**:
-   ```bash
-   ./ocean_sim
-   ```
-
 ---
 
-## Example Output - Work In Progress
+## Example Output
 The simulation dynamically updates the terminal with a real-time ASCII grid. Below is an example snapshot of the ocean ecosystem:
 
 ```

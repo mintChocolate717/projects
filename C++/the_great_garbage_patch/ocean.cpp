@@ -1,9 +1,6 @@
 /**
- * @author Jiwoong "Alex" Choi
- * @date 2024.12.06
- * @details For COE322 final project
- * EID: JC96768
- * TACC: love_bbq_69
+ * @authors Jiwoong "Alex" Choi
+ * @date 2024.12.11
  */
 #include <iostream>
 using std::cout, std::cin;
@@ -96,7 +93,7 @@ float random_float(float min = 0.f, float max = 1.f) {
  * @brief 2d cellular representation of ocean with objects
  */
 class Ocean {
-    protected: // @todo later change to private/protected
+    public: // @todo later change to private/protected
         /// @var int num_turtles
         /// @brief Population of turtles in the simulation.
         int num_turtle{0};
@@ -108,14 +105,6 @@ class Ocean {
         /// @var int num_ships
         /// @brief Number of ships involved in the simulation.
         int num_ship{0};
-        
-        /// @var int population
-        /// @brief hash map storing the Number of each demographics involved in the simulation.
-        std::map<int, int> population = {
-            {0, num_turtle},
-            {1, num_trash},
-            {2, num_ship}
-        };
 
     
     public:
@@ -169,7 +158,6 @@ class Ocean {
         * @param _ships ship population
         * @return creates a copied ocean object with above parameters
         */
-        Ocean(const Ocean& other) : grid(other.grid), num_rows(other.num_rows), num_cols(other.num_cols), num_turtle(other.num_turtle), num_trash(other.num_trash), num_ship(other.num_ship), num_cells(other.num_cells) {}
         
         /**
         * @brief setter for a specific cell
@@ -258,7 +246,7 @@ class Ocean {
                 // Turtle encounters trash -> It dies.
                 { {Ocean::Occupy::Turtle, Ocean::Occupy::Trash},   Ocean::CollisionResult::Die },
                 // Turtle encounters a ship -> Movement is blocked.
-                { {Ocean::Occupy::Turtle, Ocean::Occupy::Ship},    Ocean::CollisionResult::Block },
+                { {Ocean::Occupy::Turtle, Ocean::Occupy::Ship},    Ocean::CollisionResult::Die },
                 // Turtle encounters another turtle -> Movement is blocked.
                 { {Ocean::Occupy::Turtle, Ocean::Occupy::Turtle},  Ocean::CollisionResult::Block },
 
@@ -278,7 +266,7 @@ class Ocean {
                 // Ship encounters another ship -> Movement is blocked.
                 { {Ocean::Occupy::Ship,   Ocean::Occupy::Ship},    Ocean::CollisionResult::Block },
                 // Ship encounters a turtle -> Movement is blocked.
-                { {Ocean::Occupy::Ship,   Ocean::Occupy::Turtle},  Ocean::CollisionResult::Block}
+                { {Ocean::Occupy::Ship,   Ocean::Occupy::Turtle},  Ocean::CollisionResult::Move}
             };
 
             /**
@@ -288,7 +276,7 @@ class Ocean {
              * @param direction the direction which the object will move to 
              * @param moving_obj the object that is trying to move to new (i, j) coordinate
              * @param arg_grid grid to work with. can be grid or temp_grid
-             * @return tuple of {i, j, moving_obj, new_i, new_j, colliding_obj}
+             * @return tuple of {curr_i, curr_j, moving_obj, new_i, new_j, colliding_obj}
              */
             std::tuple<int, int, Occupy, int, int, Occupy> collision(int i, int j, int new_i, int new_j, Occupy moving_obj, const std::vector<int>& arg_grid) {
                 // get the object existing at the new location that will "crash" with moving_obj
@@ -300,27 +288,22 @@ class Ocean {
                 switch (collision_outcome) {
                     // Case 1 - moving_obj can proceed to moving into new cell:
                     case CollisionResult::Move:
-                        // current cell becomes empty:
-                        // this->set_cell(i, j, Occupy::Empty);
-                        // new cell becomes the moving_obj:
-                        // this->set_cell(new_i, new_j, moving_obj);
+                        // current cell becomes empty and new cell becomes the moving_obj:
                         return{i, j, Occupy::Empty, new_i, new_j, moving_obj};
                     
                     // Case 2 - moving_obj dies:
                     case CollisionResult::Die:
                         // current cell becomes empty:
-                        // this->set_cell(i, j, Occupy::Empty);
                         // new cell remains the same
-                        //break;
                         return{i, j, Occupy::Empty, new_i, new_j, existing_obj};
 
+                    case CollisionResult::Block:
                     // Case 2 - moving_obj's move is Blocked:
                         // new_cell and old_cell all remain the same:
-                        // break;
                         return{i, j, moving_obj, new_i, new_j, existing_obj};
-                    
+
                     default:
-                        break;
+                        return{i, j, moving_obj, i, j, moving_obj};
                 }
             };
 
@@ -334,7 +317,9 @@ class Ocean {
              */
             std::tuple<int, int, Occupy, int, int, Occupy> move(int i, int j, Occupy object, Direction direction) {
                 // Exit early if the direction is Origin (no movement) or if object is empty
-                if (direction == Direction::Idle or object == Occupy::Empty) { return; }
+                if (direction == Direction::Idle or object == Occupy::Empty) {
+                    return{i, j, object, i, j, object};
+                }
                 // Initialize new x and y coordinates
                 int new_i = i, new_j = j;
                 
@@ -374,11 +359,12 @@ class Ocean {
                 }
                 // Check for out-of-bounds movement: if the new position is invalid, return early
                 if (new_i < 0 or new_i >= num_rows or new_j < 0 or new_j >= num_cols) {
+                    // cout << "new coordinate out of bounds" << '\n';
                     return {i, j, object, i, j, object};
                 }
 
                 // If within bounds, finish the moving logic with collision logic:
-                return this->collision(i, j, new_i, new_j, object, grid);
+                return this->collision(i, j, new_i, new_j, object, this->grid);
             };
         
         public:
@@ -449,7 +435,7 @@ class Ocean {
             */
             void print_grid() {
                 // first, send the cursor to the home position:
-                //printf( "%c[1;0H",(char)27); /// TODO: change later
+                printf( "%c[1;0H",(char)27); /// TODO: change later
                 std::cout << '\n';
                 
                 // second, print the column indices first:
@@ -477,27 +463,134 @@ class Ocean {
                 }
                 // finally print all the populations:
                 std::cout << '\n';
-                std::cout << "(dummy) Turtles: " << num_turtle << '\n';
-                std::cout << "(dummy) Trash: " << num_trash << '\n';
-                std::cout << "(dummy) Ships: " << num_ship << '\n';
+                std::cout << "Turtles: " << num_turtle << '\n';
+                std::cout << "Trash: " << num_trash << '\n';
+                std::cout << "Ships: " << num_ship << '\n';
             }
 
             void set_dummy_grid() {
-                // Fill the grid with some test values
-                // Example: Alternate turtles (0), trash (1), and ships (2) in the grid
+                // Initialize counters to enforce exact population
+                int turtle_count = 0;
+                int trash_count = 0;
+                int ship_count = 0;
+
+                // Desired populations (if constructor had population parameters intialized, handle it here)
+                const int max_turtles = std::min(25, num_turtle);
+                const int max_trash = std::min(25, num_trash);
+                const int max_ships = std::min(2, num_ship);
+
+                // Randomly fill the grid
                 for (int i = 0; i < num_cells; ++i) {
-                    int n = random_int(0, 10);
-                    if (n == 1) {
+                    if (turtle_count <= max_turtles && random_float(0.f, 1.f) < 0.0025) {
                         grid[i] = static_cast<int>(Occupy::Turtle);
-                    } else if (n == 2) {
+                        turtle_count++;
+                    } else if (trash_count <= max_trash && random_float(0.f, 1.f) < 0.005) {
                         grid[i] = static_cast<int>(Occupy::Trash);
-                    } else if (n == 3) {
+                        trash_count++;
+                    } else if (ship_count <= max_ships && random_float(0.f, 1.f) < 0.0002) {
                         grid[i] = static_cast<int>(Occupy::Ship);
+                        ship_count++;
                     } else {
                         grid[i] = static_cast<int>(Occupy::Empty);
                     }
                 }
+
+                // Populate counts
+                // auto [_num_turtles, _num_trash, _num_ships] = population(grid);
+                this->num_turtle = max_turtles;
+                this->num_trash = max_trash;
+                this->num_ship = max_ships;
             }
+
+            void move_ship(std::vector<int>& temp_grid) {
+                for (int i = 0; i < num_rows ; i++) {
+                    for (int j = 0; j < num_cols; j++) {
+                        if (get_cell(i, j) == Occupy::Ship) {
+                            // get the result of moving objects
+                            auto [old_i, old_j, old_obj, new_i, new_j, new_obj] = ship_move(i, j);
+
+                            int curr_index = i * num_cols + j;
+                            int new_index = new_i * num_cols + new_j;
+
+                            // now try to update this on target_grid:
+                            // check if new indices in TEMP_grid is already occupied by anothe ship
+                            if (temp_grid[new_index] == static_cast<int>(Occupy::Ship)) { // case when it's occupied already
+                                temp_grid[curr_index] = static_cast<int>(Occupy::Ship);
+                            } else { // else the future cell is empty
+                                // update the temp grid accordingly:
+                                temp_grid[curr_index] = static_cast<int>(Occupy::Empty);
+                                temp_grid[new_index] = static_cast<int>(Occupy::Ship);
+                            }
+                        }
+                    }
+                }
+            }
+
+            void move_turtle(std::vector<int>& temp_grid) {
+                for (int i = 0; i < num_rows ; i++) {
+                    for (int j = 0; j < num_cols; j++) {
+                        if (get_cell(i, j) == Occupy::Turtle) {
+                            // get the result of moving objects
+                            auto [old_i, old_j, old_obj, new_i, new_j, new_obj] = turtle_move(i, j);
+
+                            int curr_index = i * num_cols + j;
+                            int new_index = new_i * num_cols + new_j;
+
+                            // now try to update this on target_grid:
+                            // check if new indices in TEMP_grid is already occupied:
+                            if (temp_grid[new_index] != static_cast<int>(Occupy::Empty)) { // case when it's occupied already
+                                auto collision_outcome = collision(i, j, new_i, new_j, old_obj, temp_grid);
+                                // retrieve the surviving object at the NEW index
+                                Occupy surviving_obj = std::get<5>(collision_outcome);
+                                // retrieve the object at the old index AFTER collision
+                                Occupy returned_obj = std::get<2>(collision_outcome);
+
+                                // update the temp grid accordingly:
+                                temp_grid[curr_index] = static_cast<int>(returned_obj);
+                                temp_grid[new_index] = static_cast<int>(surviving_obj);
+                            } else { // else the future cell is empty
+                                // update the temp grid accordingly:
+                                temp_grid[curr_index] = static_cast<int>(old_obj);
+                                temp_grid[new_index] = static_cast<int>(new_obj);
+                            }
+                        }
+                    }
+                }
+            }
+
+            void move_trash(std::vector<int>& temp_grid) {
+                for (int i = 0; i < num_rows ; i++) {
+                    for (int j = 0; j < num_cols; j++) {
+                        if (get_cell(i, j) == Occupy::Trash) {
+                            // get the result of moving objects
+                            auto [old_i, old_j, old_obj, new_i, new_j, new_obj] = trash_move(i, j);
+
+                            int curr_index = i * num_cols + j;
+                            int new_index = new_i * num_cols + new_j;
+
+                            // now try to update this on target_grid:
+                            // check if new indices in TEMP_grid is already occupied:
+                            if (temp_grid[new_index] != static_cast<int>(Occupy::Empty)) { // case when it's occupied already
+                                auto collision_outcome = collision(i, j, new_i, new_j, old_obj, temp_grid);
+                                // retrieve the surviving object at the NEW index
+                                Occupy surviving_obj = std::get<5>(collision_outcome);
+                                // retrieve the object at the old index AFTER collision
+                                Occupy returned_obj = std::get<2>(collision_outcome);
+
+                                // update the temp grid accordingly:
+                                temp_grid[curr_index] = static_cast<int>(returned_obj);
+                                temp_grid[new_index] = static_cast<int>(surviving_obj);
+                            } else { // else the future cell is empty
+                                // update the temp grid accordingly:
+                                temp_grid[curr_index] = static_cast<int>(old_obj);
+                                temp_grid[new_index] = static_cast<int>(new_obj);
+                            }
+                        }
+                    }
+                }
+            }
+
+
 
             /**
              * @brief updates the grid using data independent method
@@ -507,83 +600,50 @@ class Ocean {
              */
             void update_grid() {
                 // intialize the grid_copy
-                std::vector<int> temp_grid(num_cells, 0);
+                std::vector<int> temp_grid(num_cells, static_cast<int>(Occupy::Empty));
                 
-                // Iterate over this temp_ocean:
-                // iterate over rows:
-                for (int i = 0; i < num_rows; ++i) {
-                    // iterate over columns:
-                    for (int j = 0; j < num_cols; ++j) {
-                        // retrieve cell state from the temp_grid (again, grid that's not getting updated)
-                        Occupy curr_obj = static_cast<Occupy>(this->get_cell(i, j));
-                        // skip empty cells
-                        if (curr_obj == Occupy::Empty) { continue; }
-                        // placeholder for later:
-                        auto result = std::make_tuple(i, j, curr_obj, i, j, curr_obj);
-                        // perform movement based on the object type
-                        switch(curr_obj) {
-                            // when Turtle
-                            case Occupy::Turtle:
-                                result =  this->turtle_move(i, j);
-                                break;
-                            // when Trash
-                            case Occupy::Trash:
-                                result = this->trash_move(i, j);
-                                break;
-                            // when  Ship
-                            case Occupy::Ship:
-                                result = this->ship_move(i, j);
-                                break;
-                            // default:
-                            default: break;
-                        }
+                // move ships first:
+                move_ship(temp_grid);
 
-                        // unpack tuple values:
-                        /** @details Defitinions for tuple values below:
-                         * old_i, old_j : row, col indices for object at current position
-                         * old_obj   : object that is at current position possibly trying to move to new position, if possible
-                         * new_i, new_j : row, col indices for object at a position that moving_obj is possibly trying to move to
-                         * new_obj: object that is at the "new" coordinate that will "collide" with incoming moving_obj
-                         */
-                        auto [old_i, old_j, old_obj, new_i, new_j, new_obj] = result;
-                        
-                        // update old cell, ths is always safe and true to do
-                        if (old_obj != Occupy::Empty) { // only do this if moving_obj is not empty
-                            temp_grid[old_i * num_cols + old_j] = static_cast<int>(old_obj);
-                        }
+                move_turtle(temp_grid);
 
-                        // compute the linearized index for (new_i, new_j):
-                        int new_index = new_i * num_cols + new_j;
+                move_trash(temp_grid);
 
-                        /**
-                         * @subsection this is where we start to handle collision that's happening at temp_grid as we update.
-                         * @details here, we check if the new cell is occupied or not. if occupied, we handle colllision using logics defined above
-                         */
-                        // check if new cell is already occupied:
-                        // if it's NOT occupied, just set it to the colliding_obj
-                        if (static_cast<Occupy>(temp_grid[new_index]) == Occupy::Empty) {
-                            temp_grid[new_index] = static_cast<int>(new_obj);
-                        } else { // if occupied, handle the collision
-                            // get the object that will occupy the new cell:
-                            Occupy surviving_obj = std::get<5>(this->collision(new_i, new_j, new_i, new_j, new_obj, temp_grid));
-                            // set the surviving_obj to the temp_grid:
-                            temp_grid[new_index] = static_cast<int>(surviving_obj);
-                        }
+                auto [_num_turtle, _num_trash, _num_ship] = population(temp_grid);
 
+                this->num_turtle = _num_turtle;
+                this->num_trash = _num_trash;
+                this->num_ship = _num_ship;
+
+                this->grid = std::move(temp_grid);       
+
+            };
+
+            void update(int total_time) {
+
+                for (int t = 0; t < total_time ; t++) {
+                    print_grid();
+                    update_grid();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                }
+            };
+
+            std::tuple<int, int, int> population(const std::vector<int>& _grid) {
+                int turtle{0}, ship{0}, trash{0};
+                for (int i = 0 ; i < num_cells; ++i) {
+                    switch(static_cast<Occupy>(_grid[i])) {
+                        case Occupy::Turtle:
+                            turtle++; break;
+                        case Occupy::Trash:
+                            trash++; break;
+                        case Occupy::Ship:
+                            ship++; break;
+                        default:
+                            break;
                     }
                 }
-                // make substitution:
-                this->grid = std::move(temp_grid);
-            };
-
-            void update() {
-                // update the grid:
-                // update_grid()
-                // print the grid:
-                print_grid();
-                // sleep for some time to simulate iteration:
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-            };
+                return {turtle, trash, ship};
+            }
     
 };
 
@@ -609,96 +669,17 @@ std::ostream& operator<<(std::ostream& os, const Ocean::Occupy& occupy) {
     return os;
 }
 
-// for now, object-based grid is not necessary
-#if 0
-/**
- * @class Object
- * @brief represents an object within a single cell of ocean grid
- */
-class Object{
-    protected:
-        /// @var int x
-        /// @brief  x coordinate of an object within a 2d grid
-        int x{0};
-        /// @var int y
-        /// @brief y coordinate of an object within a 2d grid
-        int y{0};
-    
-    public:
-        /// @brief constructor of an ocean object
-        Object(int x_pos, int y_pos) : x(x_pos), y(y_pos) {};
 
-        /// @brief default movement of an object
-        virtual void move() = 0;
-
-        /// @brief getter for x position
-        int get_x() const {return x;}
-        /// @brief getter for y position
-        int get_y() const {return y;}
-};
-
-/**
- * @class Turtle -> parent class: Object
- * @brief represents an object Turtle floating around the ocean
- */
-class Turtle : public Object {
-    public:
-        /// @brief constructor for a turtle
-        Turtle(int x_pos, int y_pos) : Object(x_pos, y_pos) {};
-
-        /// @brief applies movement to the turtle in the ocean
-        void turtle_move() {
-
-        };
-};
-
-/**
- * @class Trash -> parent class: Object
- * @brief represents an object Trash floating around the ocean
- */
-class Trash : public Object {
-    public:
-        /// @brief constructor for a turtle
-        Trash(int x_pos, int y_pos) : Object(x_pos, y_pos) {};
-
-        /// @brief applies movement to the turtle in the ocean
-        void trash_move() {
-
-        };
-};
-
-/**
- * @class Ship -> parent class: Object
- * @brief represents an object Ship floating around the ocean
- */
-class Ship : public Object {
-    public:
-        /// @brief constructor for a turtle
-        Ship(int x_pos, int y_pos) : Object(x_pos, y_pos) {};
-
-        /// @brief applies movement to the turtle in the ocean
-        void ship_move() {
-
-        };
-};
-#endif
 
 int main() {
-    Ocean ocean(4, 4, 0, 0, 0);
+
     std::vector<int> example = {
-        // Row 0
-        0, -1, 1, -1,
-        // Row 1
-        -1, -1, 2, 1,
-        // Row 2
-        0, 2, -1, 1,
-        // Row 3
-        -1, -1, -1, 2
+
     };
-    ocean.grid = example;
+    Ocean ocean(70, 70, 40, 40, 14);
+    ocean.set_dummy_grid();
 
-    ocean.print_grid();
-
-    return 0;
+    ocean.update(100);
+    return EXIT_SUCCESS;
 }
 

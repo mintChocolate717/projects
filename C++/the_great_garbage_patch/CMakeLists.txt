@@ -7,6 +7,6 @@ message( "Using sources: ocean.cpp" )
 add_executable( ocean )
 target_sources( ocean PRIVATE ocean.cpp )
 
-target_compile_features( ocean PRIVATE cxx_std_17 )
+target_compile_features( ocean PRIVATE cxx_std_23 )
 install( TARGETS ocean DESTINATION . )
 

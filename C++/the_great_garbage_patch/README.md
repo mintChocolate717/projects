@@ -7,10 +7,12 @@ This directory contains the implementation of a **time-dependent simulation** to
 ## Features
 - **Cellular Automaton Framework**: Simulates the movement and interaction of entities (turtles, trash, ships) within a 2D ocean grid.
 - **Entity-Specific Behavior**:
-  - **Turtles**: Move randomly and die upon encountering trash.
-  - **Trash**: Drifts minimally to simulate ocean currents.
-  - **Ships**: Remove trash when encountered.
+  - **Turtles**: Move randomly, avoid obstacles, and die upon encountering trash or colliding with ships.
+  - **Trash**: Drifts with a small probability, simulating ocean currents, and interacts destructively with ships.
+  - **Ships**: Navigate the ocean, reducing trash populations and dynamically interacting with other entities.
+- **Collision Handling**: Includes a well-defined collision matrix dictating entity outcomes during interactions.
 - **Optimized Grid Representation**: Uses a flattened 1D vector for efficient memory usage.
+- **Randomized Dynamics**: Movement behaviors are governed by user-configurable probabilities for idling versus active movement.
 - **Real-Time Visualization**: ASCII-based display updates dynamically to represent the current state of the ocean.
 
 ---
@@ -22,21 +24,27 @@ This directory contains the implementation of a **time-dependent simulation** to
 |-- README.md            # Documentation for the simulation project
 |-- ocean.sh             # Bash Script for running the program
 |-- CMakeLists.txt       # CMake configuration
-|-- written_report.pdf   # written report that discuss the project
+|-- written_report.pdf   # Written report discussing the project
 ```
 
 ---
 
-## How to Run - Work In Progress
+## How to Run
 1. **Clone the Repository**:
    ```bash
    git clone https://github.com/yourusername/ocean-simulation.git
    cd ocean-simulation/simulation
    ```
-2. **Run the bash script**:
+2. **Compile the Program**:
+   Use `icpx` or any compatible compiler to build the project.
    ```bash
-   icpx ./ocean.sh
+   icpx -std=c++17 -o ocean_simulation ocean.cpp
    ```
+3. **Run the Simulation**:
+   ```bash
+   ./ocean_simulation
+   ```
+
 ---
 
 ## Example Output
@@ -50,17 +58,18 @@ The simulation dynamically updates the terminal with a real-time ASCII grid. Bel
 3 o x | o x
 4 | o x | o
 
-Turtles: 5
-Trash: 10
-Ships: 2
+Turtles: 40
+Trash: 40
+Ships: 14
 ```
 
 ---
 
-## Future Work - Work In Progress
+## Future Work
 Potential enhancements include:
-- Adding realistic entity behaviors such as turtle breeding and directed ship movement.
-- Incorporating environmental factors like ocean currents to simulate trash accumulation zones.
-- Exporting simulation data for visualization in scientific tools.
+- Adding realistic entity behaviors such as turtle breeding, ship-directed movement towards trash, and turtle avoidance of trash.
+- Incorporating environmental factors like ocean currents to simulate trash accumulation zones and dynamic obstacle placement.
+- Improving visualization techniques, including exporting data for scientific tools or using graphical representations.
+- Introducing performance optimizations for larger grid sizes or extended simulation durations.
 
 ---
